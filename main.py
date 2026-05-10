@@ -120,15 +120,27 @@ def getUserFromPhone(phoneNumber: str):
 
 @app.post("/user/{phoneNumber}/login")
 def loginUserWithPhone(phoneNumber: str):
-    user = SokUser(phoneNumber)
-    verificationId = user._requestLoginOTP()
+    try:
+        user = SokUser(phoneNumber)
+        verificationId = user._requestLoginOTP()
 
-    if verificationId == "BUYER_NOT_FOUND_EXCEPTION":
-        logger.error(f"Login: Account not found for {phoneNumber}")
-        raise HTTPException(status_code=404, detail="ACCOUNT_NOT_FOUND")
+        if verificationId == "BUYER_NOT_FOUND_EXCEPTION":
+            logger.error(f"Login: Account not found for {phoneNumber}")
+            raise HTTPException(status_code=404, detail="ACCOUNT_NOT_FOUND")
 
-    logger.info(f"Login: OTP requested for {phoneNumber}. ID: {verificationId}")
-    return {"verificationId": verificationId}
+        if not verificationId:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to get verification ID. Server returned None.",
+            )
+
+        logger.info(f"Login: OTP requested for {phoneNumber}. ID: {verificationId}")
+        return {"verificationId": verificationId}
+
+    except Exception as e:
+        logger.error(f"CRASH in loginUserWithPhone: {str(e)}")
+        # This will forcefully print the exact Python error onto your Swagger UI screen
+        raise HTTPException(status_code=500, detail=f"INTERNAL_CRASH: {str(e)}")
 
 
 @app.post("/user/{phoneNumber}/login/{verificationId}/{otpCode}")

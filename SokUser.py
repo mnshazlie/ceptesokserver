@@ -142,33 +142,42 @@ class SokUser:
             print(response.json())
             return
 
-    def _requestSignupOTP(self):
-        url = "https://giris.ec.sokmarket.com.tr/api/authentication/otp-registration/generate"
-        headers = {
-            "X-Platform": "WEB",
-            "Origin": "https://giris.ec.sokmarket.com.tr",
-            "Referer": "https://giris.ec.sokmarket.com.tr/otp-register",
-            "Cookie": "Service-Type=MARKET;",
-        }
+    def _requestLoginOTP(self):
+        url = "https://giris.ec.sokmarket.com.tr/api/authentication/otp/generate"
+        headers = {"X-Platform": "WEB"}
+
         payload = {
             "clientId": "buyer-web",
             "phoneNumber": str(self.phoneNumber),
             "captchaToken": "",
-            "captchaAction": "generate_register_otp",
+            "captchaAction": "generate_login_otp",
             "reCaptchaV2": False,
         }
 
         print(Colored.info(f"{self.phoneNumber} Numarası için SMS kodu isteniyor..."))
 
-        response = self.session.post(url, headers=headers, json=payload)
+        try:
+            response = self.session.post(url, headers=headers, json=payload)
 
-        if response.status_code == 200:
-            print(Colored.success(f"SMS kodu gönderildi"))
-            return response.json().get("verificationId")
-        else:
-            print(Colored.error("SMS kodu göndermekte hata oluştu"))
-            print(response.json())
-            return
+            if response.status_code == 200:
+                print(Colored.success(f"SMS kodu gönderildi"))
+                return response.json().get("verificationId")
+            else:
+                # We print the raw text here just in case it is an HTML block page
+                print(Colored.error(f"Hata kodu: {response.status_code}"))
+                print(
+                    Colored.error(f"Sunucu Cevabı: {response.text[:200]}")
+                )  # Only print first 200 chars
+
+                # Safely try to parse JSON
+                try:
+                    return response.json().get("code")
+                except:
+                    return None
+
+        except Exception as e:
+            print(Colored.error(f"Ağ Hatası: {str(e)}"))
+            raise e
 
     def _requestLoginOTP(self):
         url = "https://giris.ec.sokmarket.com.tr/api/authentication/otp/generate"
