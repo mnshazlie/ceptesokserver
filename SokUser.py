@@ -25,7 +25,7 @@ class SokUser:
         self.balance = balance
 
         # --- 2. CHROME IMPERSONATION ---
-        self.session = requests.Session(impersonate="chrome110")
+        self.session = requests.Session(impersonate="safari15_5")
 
     @property
     def userTuple(self):
